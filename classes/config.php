@@ -5,7 +5,7 @@ class Connect
     private const servername = "localhost";
     private const username = "root";
     private const password = "";
-    private const database = "test";
+    private const database = "petcare";
 
     private $pdo;
     public function __construct()
@@ -20,7 +20,7 @@ class Connect
 
     }
 
-    public function getConn(): PDO{
+    public function getPdo(): PDO{
         return $this->pdo;
     }
 }
