@@ -54,5 +54,77 @@ class Database
             return false;
         }
     }
+
+    public function checkAdminUser($user_id)
+    {
+        $sql = "SELECT id, role FROM users WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+
+        if (!$stmt) {
+            return false;
+        }
+
+        if ($stmt->execute([$user_id])) {
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user && $user["role"] === "admin") {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function countAllUsers(){
+        $sql = "SELECT COUNT(*) FROM users WHERE status = 'active' AND role = 'user'";
+        $stmt = $this->pdo->prepare($sql);
+        if (!$stmt) {
+            return 0;
+        }
+        if ($stmt->execute()) {
+            return (int) $stmt->fetchColumn();
+        }
+        return 0;
+
+    }
+
+    public function countAllSlots(){
+        $sql = "SELECT COUNT(*) FROM slots";
+        $stmt = $this->pdo->prepare($sql);
+        if (!$stmt) {
+            return 0;
+        }
+        if ($stmt->execute()) {
+            return (int) $stmt->fetchColumn();
+        }
+        return 0;
+
+    }
+
+    public function countAllAppointments(){
+        $sql = "SELECT COUNT(*) FROM appointments";
+        $stmt = $this->pdo->prepare($sql);
+        if (!$stmt) {
+            return 0;
+        }
+        if ($stmt->execute()) {
+            return (int) $stmt->fetchColumn();
+        }
+        return 0;
+
+    }
+
+    public function countAllPets(){
+        $sql = "SELECT COUNT(*) FROM pets";
+        $stmt = $this->pdo->prepare($sql);
+        if (!$stmt) {
+            return 0;
+        }
+        if ($stmt->execute()) {
+            return (int) $stmt->fetchColumn();
+        }
+        return 0;
+
+    }
 }
 ?>

@@ -1,3 +1,32 @@
+<?php
+require_once("../classes/admin.php");
+session_start();
+$admin = new Admin();
+if(isset($_SESSION["userID"])){
+    $test = $admin->isAdmin($_SESSION["userID"]);
+    if(!$admin->isAdmin($_SESSION["userID"])){
+        header("location: ../pages/login.php");
+        exit();
+    }
+}else{
+    header("location: ../pages/login.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    $_SESSION = [];
+    session_destroy();
+
+    header("Location: ../pages/login.php");
+    exit();
+}
+
+$totalActivUsers = $admin->totalUsers();
+$totalSlots = $admin->totalSlots();
+$totalAppointments = $admin->totalAppointments();
+$totalPets = $admin->totalPets();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,80 +52,6 @@
             background-color: var(--bg-color);
             color: #333;
             overflow-x: hidden;
-        }
-
-        /* Sidebar Styling */
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #ffffff;
-            border-right: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-        }
-
-        .sidebar-brand {
-            padding: 24px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid #f1f3f5;
-        }
-
-        .brand-icon-box {
-            width: 40px;
-            height: 40px;
-            background-color: var(--light-green-bg);
-            color: var(--primary-green);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .sidebar-nav {
-            padding: 20px 12px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: #6c757d;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.925rem;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            background-color: #f8f9fa;
-            color: var(--primary-green);
-        }
-
-        .sidebar-link.active {
-            background-color: var(--light-green-bg);
-            color: var(--primary-green);
-            font-weight: 600;
-        }
-
-        .sidebar-footer {
-            padding: 16px 20px;
-            border-top: 1px solid #f1f3f5;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
 
         /* Main Content Wrapper */
@@ -363,54 +318,9 @@
     </style>
 </head>
 <body>
-
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon-box">
-                <i class="fa-solid fa-paw"></i>
-            </div>
-            <div>
-                <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;">PetCare</h6>
-                <small class="text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">ADMIN PANEL</small>
-            </div>
-        </div>
-
-        <div class="sidebar-nav">
-            <a href="#" class="sidebar-link active">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-solid fa-users"></i>
-                <span>Users</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Slots</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-regular fa-calendar-check"></i>
-                <span>Appointments</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-solid fa-shield-dog"></i>
-                <span>Pets</span>
-            </a>
-        </div>
-
-        <div class="sidebar-footer">
-            <div class="d-flex align-items-center gap-2 overflow-hidden">
-                <div class="admin-avatar flex-shrink-0">A</div>
-                <div class="text-truncate">
-                    <div class="fw-bold text-dark small text-truncate">Administrator</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">System Admin</div>
-                </div>
-            </div>
-            <a href="#" class="text-muted"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
-        </div>
-    </div>
-
+    <?php
+    include("../includes/sidebar.php");
+    ?>
     <!-- Main Content -->
     <div class="main-content">
         
@@ -458,12 +368,9 @@
                             <div class="stat-icon-box bg-green-soft">
                                 <i class="fa-solid fa-user-group"></i>
                             </div>
-                            <span class="stat-badge bg-success bg-opacity-10 text-success">
-                                <i class="fa-solid fa-arrow-up me-1"></i>+8.4%
-                            </span>
                         </div>
                         <div class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Active Users</div>
-                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3">1,248</h3>
+                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3"><?= $totalActivUsers?></h3>
                         <p class="text-muted small mb-0">Currently active accounts</p>
                     </div>
                 </div>
@@ -475,10 +382,9 @@
                             <div class="stat-icon-box bg-blue-soft">
                                 <i class="fa-regular fa-calendar-days"></i>
                             </div>
-                            <span class="stat-badge bg-primary bg-opacity-10 text-primary">Open</span>
                         </div>
                         <div class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Slots</div>
-                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3">186</h3>
+                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3"><?= $totalSlots?></h3>
                         <p class="text-muted small mb-0">Scheduled appointment slots</p>
                     </div>
                 </div>
@@ -490,12 +396,9 @@
                             <div class="stat-icon-box bg-purple-soft">
                                 <i class="fa-regular fa-calendar-check"></i>
                             </div>
-                            <span class="stat-badge bg-purple bg-opacity-10 text-purple" style="background-color: #f3e8ff; color: #7c3aed;">
-                                <i class="fa-solid fa-chart-line me-1"></i>94% fill
-                            </span>
                         </div>
                         <div class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Appointments</div>
-                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3">864</h3>
+                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3"><?= $totalAppointments?></h3>
                         <p class="text-muted small mb-0">All recorded appointments</p>
                     </div>
                 </div>
@@ -510,7 +413,7 @@
                             <span class="stat-badge bg-warning bg-opacity-10 text-dark fw-semibold">5 Species</span>
                         </div>
                         <div class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Pets</div>
-                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3">532</h3>
+                        <h3 class="fw-bold text-dark mb-1 mt-1 fs-3"><?=$totalPets?></h3>
                         <p class="text-muted small mb-0">Registered pets</p>
                     </div>
                 </div>

@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Destroy the session
         session_destroy();
+        header("Refresh: 2");
     }
 }
 ?>
