@@ -1,5 +1,54 @@
+<?php
+require_once("../classes/admin.php");
+session_start();
+$admin = new Admin();
+if (isset($_SESSION["userID"])) {
+    if (!$admin->isAdmin($_SESSION["userID"])) {
+        header("location: ../pages/login.php");
+        exit();
+    }
+} else {
+    header("location: ../pages/login.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['logout'])) {
+    $_SESSION = [];
+    session_destroy();
+
+    header("Location: ../pages/login.php");
+    exit();
+}
+
+$allSlots = $admin->getSlots();
+
+$perPage = 5;
+$totalSlots = count($allSlots);
+$totalPages = max(1, (int) ceil($totalSlots / $perPage));
+
+// Get the current page from the URL
+$currentPage = isset($_GET['page']) && is_numeric($_GET['page'])
+    ? (int) $_GET['page']
+    : 1;
+
+// Keep the page within valid limits
+$currentPage = max(1, min($currentPage, $totalPages));
+
+// Calculate the starting position
+$offset = ($currentPage - 1) * $perPage;
+
+// Get only the slots for the current page
+$slots = array_slice($allSlots, $offset, $perPage);
+
+// Calculate the displayed range
+$showingFrom = $totalSlots > 0 ? $offset + 1 : 0;
+$showingTo = min($offset + $perPage, $totalSlots);
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,80 +72,6 @@
             background-color: var(--bg-color);
             color: #333;
             overflow-x: hidden;
-        }
-
-        /* Sidebar Styling */
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #ffffff;
-            border-right: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            z-index: 1000;
-        }
-
-        .sidebar-brand {
-            padding: 24px 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid #f1f3f5;
-        }
-
-        .brand-icon-box {
-            width: 40px;
-            height: 40px;
-            background-color: var(--light-green-bg);
-            color: var(--primary-green);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .sidebar-nav {
-            padding: 20px 12px;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: #6c757d;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.925rem;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .sidebar-link:hover {
-            background-color: #f8f9fa;
-            color: var(--primary-green);
-        }
-
-        .sidebar-link.active {
-            background-color: var(--light-green-bg);
-            color: var(--primary-green);
-            font-weight: 600;
-        }
-
-        .sidebar-footer {
-            padding: 16px 20px;
-            border-top: 1px solid #f1f3f5;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
 
         /* Main Content Wrapper */
@@ -216,42 +191,13 @@
             color: #fff;
         }
 
-        /* Metric Cards */
-        .metric-card {
-            background: #ffffff;
-            border-radius: 16px;
-            border: 1px solid #e9ecef;
-            padding: 20px;
-            height: 100%;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.01);
-            position: relative;
-        }
-
-        .metric-card.active-border {
-            border-left: 4px solid var(--primary-green);
-        }
-
-        .metric-icon-box {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .bg-green-soft  { background-color: #e6f2ee; color: var(--primary-green); }
-        .bg-teal-soft   { background-color: #d1fae5; color: #059669; }
-        .bg-purple-soft { background-color: #f3e8ff; color: #7c3aed; }
-
         /* Main Table Card */
         .main-card {
             background: #ffffff;
             border-radius: 16px;
             border: 1px solid #e9ecef;
             padding: 28px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.01);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01);
             margin-bottom: 25px;
         }
 
@@ -278,7 +224,7 @@
             background-color: #ffffff;
             color: var(--primary-green);
             font-weight: 600;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         .toggle-badge {
@@ -436,69 +382,38 @@
         }
 
         @media (max-width: 992px) {
-            .sidebar { width: 70px; }
-            .sidebar .sidebar-brand span, .sidebar .sidebar-link span, .sidebar .sidebar-footer div { display: none; }
-            .main-content { margin-left: 70px; }
+            .sidebar {
+                width: 70px;
+            }
+
+            .sidebar .sidebar-brand span,
+            .sidebar .sidebar-link span,
+            .sidebar .sidebar-footer div {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 70px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon-box">
-                <i class="fa-solid fa-paw"></i>
-            </div>
-            <div>
-                <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.95rem;">PetCare</h6>
-                <small class="text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">ADMIN PANEL</small>
-            </div>
-        </div>
-
-        <div class="sidebar-nav">
-            <a href="#" class="sidebar-link">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-solid fa-users"></i>
-                <span>Users</span>
-            </a>
-            <a href="#" class="sidebar-link active">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Slots</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-regular fa-calendar-check"></i>
-                <span>Appointments</span>
-            </a>
-            <a href="#" class="sidebar-link">
-                <i class="fa-solid fa-shield-dog"></i>
-                <span>Pets</span>
-            </a>
-        </div>
-
-        <div class="sidebar-footer">
-            <div class="d-flex align-items-center gap-2 overflow-hidden">
-                <div class="admin-avatar flex-shrink-0">A</div>
-                <div class="text-truncate">
-                    <div class="fw-bold text-dark small text-truncate">Administrator</div>
-                    <div class="text-muted" style="font-size: 0.7rem;">System Admin</div>
-                </div>
-            </div>
-            <a href="#" class="text-muted"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
-        </div>
-    </div>
+    <?php
+    include("../includes/sidebar.php");
+    ?>
 
     <!-- Main Content -->
     <div class="main-content">
-        
+
         <!-- Top Header Navbar -->
         <header class="top-navbar">
             <div>
                 <div class="breadcrumb-custom">Admin &gt; Slots</div>
-                <h1 class="page-title">Slots Management <span class="text-muted fw-normal fs-6 ms-2">· Create and manage appointment availability</span></h1>
+                <h1 class="page-title">Slots Management <span class="text-muted fw-normal fs-6 ms-2">· Create and manage
+                        appointment availability</span></h1>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <button class="notification-btn">
@@ -522,95 +437,32 @@
                     <h2 class="fw-bold text-dark mb-0 fs-3">Appointment Slot Registry</h2>
                 </div>
                 <div>
-                    <button class="btn btn-custom-green rounded-pill px-4 py-2 fw-medium d-inline-flex align-items-center gap-2">
+                    <button
+                        class="btn btn-custom-green rounded-pill px-4 py-2 fw-medium d-inline-flex align-items-center gap-2"
+                        data-bs-toggle="modal" data-bs-target="#addSlotModal">
                         <i class="fa-solid fa-plus"></i> Add Slot
                     </button>
                 </div>
             </div>
 
-            <!-- 4 Metric Cards Grid -->
-            <div class="row g-3 mb-4">
-                <!-- Metric 1: Total Slots -->
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card d-flex justify-content-between align-items-start">
-                        <div>
-                            <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Total Slots</span>
-                            <h2 class="fw-bold text-dark my-1 fs-2">23</h2>
-                            <small class="text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                <i class="fa-regular fa-calendar"></i> Oct 26 – Oct 30
-                            </small>
-                        </div>
-                        <div class="metric-icon-box bg-green-soft">
-                            <i class="fa-regular fa-calendar-minus"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Metric 2: Open Slots -->
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card active-border d-flex justify-content-between align-items-start">
-                        <div>
-                            <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Open Slots</span>
-                            <h2 class="fw-bold text-success my-1 fs-2">14</h2>
-                            <small class="text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                <i class="fa-solid fa-circle text-success" style="font-size: 6px;"></i> 60.8% available
-                            </small>
-                        </div>
-                        <div class="metric-icon-box bg-teal-soft">
-                            <i class="fa-solid fa-lock-open"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Metric 3: Booked Slots -->
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card d-flex justify-content-between align-items-start">
-                        <div>
-                            <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Booked Slots</span>
-                            <h2 class="fw-bold text-dark my-1 fs-2">9</h2>
-                            <small class="text-muted d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                <i class="fa-regular fa-circle-check"></i> 39.2% reserved
-                            </small>
-                        </div>
-                        <div class="metric-icon-box bg-purple-soft">
-                            <i class="fa-solid fa-chair"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Metric 4: Next Available -->
-                <div class="col-sm-6 col-xl-3">
-                    <div class="metric-card d-flex justify-content-between align-items-start">
-                        <div>
-                            <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.5px;">Next Available</span>
-                            <h6 class="fw-bold text-dark my-2" style="font-size: 1.05rem;">Today, 02:00 PM</h6>
-                            <small class="text-success fw-medium d-flex align-items-center gap-1" style="font-size: 0.75rem;">
-                                <i class="fa-regular fa-hourglass-half"></i> In 1 hr 45 min
-                            </small>
-                        </div>
-                        <div class="metric-icon-box bg-teal-soft">
-                            <i class="fa-regular fa-clock"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Slots Main Table Card -->
             <div class="main-card">
-                
+
                 <!-- Table Filters and Search -->
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                     <div>
                         <h4 class="fw-bold text-dark mb-1 fs-5">All Slots</h4>
                         <p class="text-muted small mb-0">View and manage available appointment time slots.</p>
                     </div>
-                    
+
                     <div class="d-flex flex-wrap align-items-center gap-3">
                         <!-- Filter Toggle Group -->
                         <div class="toggle-group">
                             <button class="toggle-btn active">All <span class="toggle-badge">23</span></button>
-                            <button class="toggle-btn">Open <span class="ms-1 text-muted" style="font-size: 0.75rem;">14</span></button>
-                            <button class="toggle-btn">Booked <span class="ms-1 text-muted" style="font-size: 0.75rem;">9</span></button>
+                            <button class="toggle-btn">Open <span class="ms-1 text-muted"
+                                    style="font-size: 0.75rem;">14</span></button>
+                            <button class="toggle-btn">Booked <span class="ms-1 text-muted"
+                                    style="font-size: 0.75rem;">9</span></button>
                         </div>
 
                         <!-- Search Bar -->
@@ -634,134 +486,97 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Row 1: Open -->
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="date-icon-bg">
-                                            <i class="fa-regular fa-calendar-days"></i>
+                            <?php foreach ($slots as $slot): ?>
+                                <!-- Row 1: Open -->
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <?php if ($slot['status'] == 'open'): ?>
+                                                <div class="date-icon-bg">
+                                                    <i class="fa-regular fa-calendar-days"></i>
+                                                </div>
+                                            <?php elseif ($slot['status'] == 'booked'): ?>
+                                                <div class="date-icon-bg" style="background-color: #f1f5f9; color: #64748b;">
+                                                    <i class="fa-regular fa-calendar"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <div class="fw-bold text-dark"><?= htmlspecialchars($slot['date']) ?></div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">26 Oct 2026</div>
-                                            <div class="text-muted small" style="font-size: 0.75rem;">Monday</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="fw-bold text-dark">09:00 AM</td>
-                                <td class="fw-bold text-dark">09:30 AM</td>
-                                <td><span class="status-pill-open">Open</span></td>
-                                <td class="text-end">
-                                    <button class="action-icon-btn"><i class="fa-solid fa-pencil"></i></button>
-                                    <button class="action-icon-btn"><i class="fa-regular fa-trash-can"></i></button>
-                                </td>
-                            </tr>
-
-                            <!-- Row 2: Booked -->
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="date-icon-bg" style="background-color: #f1f5f9; color: #64748b;">
-                                            <i class="fa-regular fa-calendar"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">26 Oct 2026</div>
-                                            <div class="text-muted small" style="font-size: 0.75rem;">Monday</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="fw-bold text-dark">09:30 AM</td>
-                                <td class="fw-bold text-dark">10:00 AM</td>
-                                <td><span class="status-pill-booked">Booked</span></td>
-                                <td class="text-end">
-                                    <button class="action-icon-btn"><i class="fa-regular fa-eye"></i></button>
-                                    <button class="action-icon-btn"><i class="fa-solid fa-lock"></i></button>
-                                </td>
-                            </tr>
-
-                            <!-- Row 3: Open -->
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="date-icon-bg">
-                                            <i class="fa-regular fa-calendar-days"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">26 Oct 2026</div>
-                                            <div class="text-muted small" style="font-size: 0.75rem;">Monday</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="fw-bold text-dark">10:00 AM</td>
-                                <td class="fw-bold text-dark">10:30 AM</td>
-                                <td><span class="status-pill-open">Open</span></td>
-                                <td class="text-end">
-                                    <button class="action-icon-btn"><i class="fa-solid fa-pencil"></i></button>
-                                    <button class="action-icon-btn"><i class="fa-regular fa-trash-can"></i></button>
-                                </td>
-                            </tr>
-
-                            <!-- Row 4: Booked -->
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="date-icon-bg" style="background-color: #f1f5f9; color: #64748b;">
-                                            <i class="fa-regular fa-calendar"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">26 Oct 2026</div>
-                                            <div class="text-muted small" style="font-size: 0.75rem;">Monday</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="fw-bold text-dark">10:30 AM</td>
-                                <td class="fw-bold text-dark">11:00 AM</td>
-                                <td><span class="status-pill-booked">Booked</span></td>
-                                <td class="text-end">
-                                    <button class="action-icon-btn"><i class="fa-regular fa-eye"></i></button>
-                                    <button class="action-icon-btn"><i class="fa-solid fa-lock"></i></button>
-                                </td>
-                            </tr>
-
-                            <!-- Row 5: Open -->
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="date-icon-bg">
-                                            <i class="fa-regular fa-calendar-days"></i>
-                                        </div>
-                                        <div>
-                                            <div class="fw-bold text-dark">26 Oct 2026</div>
-                                            <div class="text-muted small" style="font-size: 0.75rem;">Monday</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="fw-bold text-dark">11:00 AM</td>
-                                <td class="fw-bold text-dark">11:30 AM</td>
-                                <td><span class="status-pill-open">Open</span></td>
-                                <td class="text-end">
-                                    <button class="action-icon-btn"><i class="fa-solid fa-pencil"></i></button>
-                                    <button class="action-icon-btn"><i class="fa-regular fa-trash-can"></i></button>
-                                </td>
-                            </tr>
+                                    </td>
+                                    <td class="fw-bold text-dark"><?= htmlspecialchars($slot['fromDate']) ?></td>
+                                    <td class="fw-bold text-dark"><?= htmlspecialchars($slot['toDate']) ?></td>
+                                    <?php if ($slot['status'] == 'open'): ?>
+                                        <td><span class="status-pill-open">Open</span></td>
+                                    <?php elseif ($slot['status'] == 'booked'): ?>
+                                        <td><span class="status-pill-booked">Booked</span></td>
+                                    <?php endif; ?>
+                                    <td class="text-end">
+                                        <?php if ($slot['status'] == 'open'): ?>
+                                            <button class="action-icon-btn" data-bs-toggle="modal"
+                                                data-bs-target="#editSlotModal"
+                                                data-slot-id="<?= htmlspecialchars($slot['id']) ?>"><i
+                                                    class="fa-solid fa-pencil"></i></button>
+                                            <form method="POST" action="delete-slot.php" class="d-inline">
+                                                <button type="submit" class="action-icon-btn" name='id' value="<?= htmlspecialchars($slot['id']) ?>">
+                                                    <i class="fa-regular fa-trash-can"></i>
+                                                </button>
+                                            </form>
+                                        <?php elseif ($slot['status'] == 'book'): ?>
+                                            <button class="action-icon-btn"><i class="fa-regular fa-eye"></i></button>
+                                            <button class="action-icon-btn"><i class="fa-solid fa-lock"></i></button>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
 
+
                 <!-- Table Footer / Pagination -->
-                <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 pt-4 border-top">
-                    <span class="text-muted small">Showing 1–5 of 23 slots</span>
-                    <nav>
+                <div
+                    class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 pt-4 border-top">
+
+                    <span class="text-muted small">
+                        Showing <?= $showingFrom ?>–<?= $showingTo ?>
+                        of <?= $totalSlots ?> slots
+                    </span>
+
+                    <nav aria-label="Slots pagination">
                         <ul class="pagination pagination-custom mb-0">
-                            <li class="page-item disabled"><a class="page-link" href="#"><i class="fa-solid fa-chevron-left small"></i></a></li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">3</a></li>
-                            <li class="page-item"><a class="page-link" href="#">4</a></li>
-                            <li class="page-item"><a class="page-link" href="#">5</a></li>
-                            <li class="page-item"><a class="page-link" href="#"><i class="fa-solid fa-chevron-right small"></i></a></li>
+
+                            <!-- Previous Button -->
+                            <li class="page-item <?= ($currentPage <= 1) ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= max(1, $currentPage - 1) ?>"
+                                    aria-label="Previous page">
+                                    <i class="fa-solid fa-chevron-left small"></i>
+                                </a>
+                            </li>
+
+                            <!-- Page Numbers -->
+                            <?php for ($page = 1; $page <= $totalPages; $page++): ?>
+                                <li class="page-item <?= ($page === $currentPage) ? 'active' : '' ?>">
+                                    <a class="page-link" href="?page=<?= $page ?>">
+                                        <?= $page ?>
+                                    </a>
+                                </li>
+                            <?php endfor; ?>
+
+                            <!-- Next Button -->
+                            <li class="page-item <?= ($currentPage >= $totalPages) ? 'disabled' : '' ?>">
+                                <a class="page-link" href="?page=<?= min($totalPages, $currentPage + 1) ?>"
+                                    aria-label="Next page">
+                                    <i class="fa-solid fa-chevron-right small"></i>
+                                </a>
+                            </li>
+
                         </ul>
                     </nav>
+
                 </div>
+
 
             </div>
 
@@ -773,7 +588,9 @@
                 <div>
                     <h6 class="fw-bold text-dark mb-1" style="font-size: 0.9rem;">Automated Slot Allocation Rules</h6>
                     <p class="text-muted small mb-0" style="line-height: 1.5;">
-                        Standard general examinations require 30-minute buffers. Surgical consultations and dental procedures are automatically granted paired slots. Slots created outside clinic operating hours (08:00 AM – 06:00 PM) will require clinical supervisor confirmation.
+                        Standard general examinations require 30-minute buffers. Surgical consultations and dental
+                        procedures are automatically granted paired slots. Slots created outside clinic operating hours
+                        (08:00 AM – 06:00 PM) will require clinical supervisor confirmation.
                     </p>
                 </div>
             </div>
@@ -781,7 +598,10 @@
         </div>
     </div>
 
+    <?php include "add-slot-modal.php" ?>
+    <?php include "edit-slot-modal.php" ?>
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

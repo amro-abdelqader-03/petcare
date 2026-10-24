@@ -126,5 +126,46 @@ class Database
         return 0;
 
     }
+
+    public function addSlot($fromDate, $toDate, $date){
+        $sql = "INSERT INTO slots (fromDate, toDate, date) VALUES 
+        (?,?,?)";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            return $stmt->execute([$fromDate, $toDate, $date]);
+        } else {
+            return false;
+        }
+    }
+
+    public function editSlot($id, $fromDate, $toDate, $date){
+        $sql = "UPDATE slots SET fromDate = ?, toDate = ?, date = ? WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            return $stmt->execute([$fromDate, $toDate, $date, $id]);
+        }
+        return false;
+    }
+
+    public function deleteSlot($id){
+        $sql = "DELETE FROM slots WHERE id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            return $stmt->execute([$id]);
+        }
+        return false;
+    }
+
+    public function getAllSlots()
+    {
+        $sql = "SELECT id, fromDate, toDate, date, status FROM slots ORDER BY id DESC";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            if ($stmt->execute()) {
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        }
+        return false;
+    }
 }
 ?>

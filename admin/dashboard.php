@@ -3,7 +3,6 @@ require_once("../classes/admin.php");
 session_start();
 $admin = new Admin();
 if(isset($_SESSION["userID"])){
-    $test = $admin->isAdmin($_SESSION["userID"]);
     if(!$admin->isAdmin($_SESSION["userID"])){
         header("location: ../pages/login.php");
         exit();
