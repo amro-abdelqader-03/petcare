@@ -32,7 +32,7 @@ class Database
 
     public function getUserByEmail($email)
     {
-        $sql = "SELECT id, password FROM users WHERE email = ?";
+        $sql = "SELECT id, password, role FROM users WHERE email = ?";
         $stmt = $this->pdo->prepare($sql);
         if ($stmt) {
             if ($stmt->execute([$email])) {

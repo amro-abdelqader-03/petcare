@@ -1,4 +1,3 @@
-
 <?php
 require_once("../classes/auth.php");
 
@@ -22,9 +21,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if (empty($emailError) && empty($passwordError)) {
-        if ($auth->login($email, $password)) { 
-            header("Location: ../index.php");
-            exit();
+        $user = $auth->login($email, $password);
+        if ($user) {
+            if ($user["role"] == "user") {
+                header("Location: ../index.php");
+                exit();
+            } elseif ($user["role"] == "admin") {
+                header("Location: ../admin/dashboard.php");
+                exit();
+            }
         } else {
             $loginError = "Invalid email address or password.";
         }
@@ -46,11 +51,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
-        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
@@ -62,8 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="container-fluid px-lg-5">
             <div class="d-flex align-items-center justify-content-between">
 
-                <a href="../index.php"
-                    class="d-flex align-items-center gap-2 text-decoration-none">
+                <a href="../index.php" class="d-flex align-items-center gap-2 text-decoration-none">
                     <div class="logo-icon-bg d-flex align-items-center justify-content-center
                         text-success rounded-circle">
                         <i class="bi bi-paw-fill fs-5"></i>
@@ -80,8 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         New to PetCare?
                     </span>
 
-                    <a href="register.php"
-                        class="btn btn-outline-success border-2 rounded-3 px-3 py-1
+                    <a href="register.php" class="btn btn-outline-success border-2 rounded-3 px-3 py-1
                         text-decoration-none fw-semibold btn-sm">
                         Sign Up <i class="bi bi-arrow-right"></i>
                     </a>
@@ -135,8 +136,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                             <!-- EMAIL -->
                             <div class="mb-3">
-                                <label for="email"
-                                    class="form-label small fw-semibold text-dark">
+                                <label for="email" class="form-label small fw-semibold text-dark">
                                     Email Address
                                     <span class="text-danger">*</span>
                                 </label>
@@ -147,15 +147,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                         <i class="bi bi-envelope"></i>
                                     </span>
 
-                                    <input
-                                        type="email"
-                                        id="email"
-                                        name="email"
-                                        class="form-control border-start-0 ps-0 text-dark fw-medium
+                                    <input type="email" id="email" name="email" class="form-control border-start-0 ps-0 text-dark fw-medium
                                             <?= !empty($emailError) ? 'is-invalid' : '' ?>"
                                         placeholder="your@example.com"
-                                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                                        autocomplete="email"
+                                        value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" autocomplete="email"
                                         required>
                                 </div>
 
@@ -171,8 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 <div class="d-flex justify-content-between
                                     align-items-center mb-1">
 
-                                    <label for="password"
-                                        class="form-label small fw-semibold text-dark mb-0">
+                                    <label for="password" class="form-label small fw-semibold text-dark mb-0">
                                         Password
                                         <span class="text-danger">*</span>
                                     </label>
@@ -185,19 +179,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                         <i class="bi bi-lock"></i>
                                     </span>
 
-                                    <input
-                                        type="password"
-                                        id="password"
-                                        name="password"
-                                        class="form-control border-start-0 border-end-0 ps-0 text-dark fw-medium
+                                    <input type="password" id="password" name="password" class="form-control border-start-0 border-end-0 ps-0 text-dark fw-medium
                                             <?= !empty($passwordError) ? 'is-invalid' : '' ?>"
-                                        placeholder="Enter your password"
-                                        autocomplete="current-password"
-                                        required>
+                                        placeholder="Enter your password" autocomplete="current-password" required>
 
-                                    <button
-                                        type="button"
-                                        id="togglePassword"
+                                    <button type="button" id="togglePassword"
                                         class="input-group-text bg-white border-start-0 text-muted"
                                         aria-label="Show password">
                                         <i class="bi bi-eye"></i>
@@ -213,9 +199,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 
                             <!-- SUBMIT -->
-                            <button
-                                type="submit"
-                                class="btn btn-emerald w-100 py-2 rounded-3
+                            <button type="submit" class="btn btn-emerald w-100 py-2 rounded-3
                                     text-white fw-bold d-flex align-items-center
                                     justify-content-center gap-2">
 
@@ -229,8 +213,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                     Don't have an account?
                                 </span>
 
-                                <a href="register.php"
-                                    class="text-success fw-bold small
+                                <a href="register.php" class="text-success fw-bold small
                                         text-decoration-none ms-1">
                                     Sign up
                                 </a>
@@ -300,4 +283,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </script>
 
 </body>
+
 </html>
