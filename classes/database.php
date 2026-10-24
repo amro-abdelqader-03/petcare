@@ -30,6 +30,18 @@ class Database
 
     }
 
+    public function getUserByEmail($email)
+    {
+        $sql = "SELECT id, password FROM users WHERE email = ?";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            if ($stmt->execute([$email])) {
+                return $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+        }
+        return false;
+    }
+
     public function addUser($fname, $lname, $email, $password)
     {
         $hash_pass = password_hash($password, PASSWORD_DEFAULT);

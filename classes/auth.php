@@ -24,5 +24,18 @@ class Auth{
     public function register($fname, $lname, $email, $password){
         return $this->db->addUser($fname, $lname, $email, $password);
     }
+
+    public function login($email, $password)
+    {
+        $user = $this->db->getUserByEmail($email);
+        if ($user) {
+            if (password_verify($password, $user['password'])) {
+                session_start();
+                $_SESSION['userID'] = $user['id'];
+                return true;
+            }
+        }
+        return false;
+    }
 }
 ?>

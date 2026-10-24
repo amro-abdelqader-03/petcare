@@ -3,13 +3,26 @@ require_once("../classes/auth.php");
 $auth = new Auth();
 $validForm = true;
 $errors = ["", "", ""];
-if ($_SERVER['REQUEST_METHOD'] == 'POST' ) {
-    
-    if ($auth->register($_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['password'])) {
-        header("Location: login.php");
-        exit();
-    } else {
-        echo '<div class="text-danger form-text fs-7 mt-1">Something wrong, please try again later.</div>';
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (!$auth->valid_email($_POST['email'])) {
+        $errors[0] = "This email address is already registered.";
+        $validForm = false;
+    }
+    if (!$auth->valid_password($_POST["password"])) {
+        $errors[1] = "Use a strong password";
+        $validForm = false;
+    }
+    if (!$auth->valid_confirm_password($_POST["confirmPassword"], $_POST["password"])) {
+        $errors[2] = "Passwords do not match.";
+        $validForm = false;
+    }
+    if ($validForm) {
+        if ($auth->register($_POST['fname'], $_POST['lname'], $_POST['email'], $_POST['password'])) {
+            header("Location: login.php");
+            exit();
+        } else {
+            echo '<div class="text-danger form-text fs-7 mt-1">Something wrong, please try again later.</div>';
+        }
     }
 }
 
@@ -60,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' ) {
                 <!-- Right Login Link -->
                 <div class="d-flex align-items-center gap-3">
                     <span class="text-muted small fw-medium">Already registered?</span>
-                    <a href="#"
+                    <a href="login.php"
                         class="btn btn-outline-success border-2 rounded-3 px-3 py-1 text-decoration-none fw-semibold btn-sm d-flex align-items-center gap-2">
                         Log In <i class="bi bi-arrow-right"></i>
                     </a>
@@ -194,8 +207,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' ) {
 
                             <?php
                             if ($_SERVER["REQUEST_METHOD"] == "POST") {
-                                if (!$auth->valid_email($_POST["email"])) {
-                                    echo '<div class="text-danger form-text fs-7 mt-1">This email address is already registered.</div>';
+                                if (!empty($errors[0])) {
+                                    echo '<div class="text-danger form-text fs-7 mt-1">'.$errors[0].'</div>';
                                 }
                             }
                             ?>
@@ -221,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' ) {
                                 <?php
                                 $text_color = "text-muted";
                                 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-                                    if (!$auth->valid_password($_POST["password"])) {
+                                    if (!empty($errors[1])) {
                                         $text_color = "text-danger";
                                     }
                                 }
@@ -245,8 +258,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' ) {
                                 </div>
                                 <?php
                                 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-                                    if (!$auth->valid_confirm_password($_POST["confirmPassword"], $_POST["password"])) {
-                                        echo '<div class="text-danger form-text fs-7 mt-1">Passwords do not match.</div>';
+                                    if (!empty($errors[2])) {
+                                        echo '<div class="text-danger form-text fs-7 mt-1">'.$errors[2].'</div>';
                                     }
                                 }
                                 ?>
@@ -272,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' ) {
                             <!-- Already have an account link -->
                             <div class="text-center mt-4">
                                 <span class="text-muted small">Already have an account?</span>
-                                <a href="#" class="text-success fw-bold small text-decoration-none ms-1">Log in</a>
+                                <a href="login.php" class="text-success fw-bold small text-decoration-none ms-1">Log in</a>
                             </div>
                         </form>
                     </div>
