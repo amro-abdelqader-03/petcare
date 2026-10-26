@@ -1,3 +1,18 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!isset($_SESSION['userID'])) {
+    header('location : index.php');
+}
+
+require_once("../classes/database.php");
+$db = new Database();
+
+$slots = $db->getAllSlots()
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -352,7 +367,7 @@
                     pet's next visit.</p>
             </div>
             <div class="col-lg-4 text-lg-end">
-                <a href="#" class="btn btn-custom-green rounded-pill px-4 py-2 fw-medium">
+                <a href="book_appoitment.php" class="btn btn-custom-green rounded-pill px-4 py-2 fw-medium">
                     <i class="fa-regular fa-calendar-plus me-2"></i>+ Book an Appointment
                 </a>
             </div>

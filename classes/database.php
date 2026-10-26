@@ -75,7 +75,8 @@ class Database
         return false;
     }
 
-    public function countAllUsers(){
+    public function countAllUsers()
+    {
         $sql = "SELECT COUNT(*) FROM users WHERE status = 'active' AND role = 'user'";
         $stmt = $this->pdo->prepare($sql);
         if (!$stmt) {
@@ -88,7 +89,8 @@ class Database
 
     }
 
-    public function countAllSlots(){
+    public function countAllSlots()
+    {
         $sql = "SELECT COUNT(*) FROM slots";
         $stmt = $this->pdo->prepare($sql);
         if (!$stmt) {
@@ -101,7 +103,8 @@ class Database
 
     }
 
-    public function countAllAppointments(){
+    public function countAllAppointments()
+    {
         $sql = "SELECT COUNT(*) FROM appointments";
         $stmt = $this->pdo->prepare($sql);
         if (!$stmt) {
@@ -114,7 +117,8 @@ class Database
 
     }
 
-    public function countAllPets(){
+    public function countAllPets()
+    {
         $sql = "SELECT COUNT(*) FROM pets";
         $stmt = $this->pdo->prepare($sql);
         if (!$stmt) {
@@ -127,7 +131,8 @@ class Database
 
     }
 
-    public function addSlot($fromDate, $toDate, $date){
+    public function addSlot($fromDate, $toDate, $date)
+    {
         $sql = "INSERT INTO slots (fromDate, toDate, date) VALUES 
         (?,?,?)";
         $stmt = $this->pdo->prepare($sql);
@@ -138,7 +143,8 @@ class Database
         }
     }
 
-    public function editSlot($id, $fromDate, $toDate, $date){
+    public function editSlot($id, $fromDate, $toDate, $date)
+    {
         $sql = "UPDATE slots SET fromDate = ?, toDate = ?, date = ? WHERE id = ?";
         $stmt = $this->pdo->prepare($sql);
         if ($stmt) {
@@ -147,7 +153,8 @@ class Database
         return false;
     }
 
-    public function deleteSlot($id){
+    public function deleteSlot($id)
+    {
         $sql = "DELETE FROM slots WHERE id = ?";
         $stmt = $this->pdo->prepare($sql);
         if ($stmt) {
@@ -166,6 +173,30 @@ class Database
             }
         }
         return false;
+    }
+
+    public function getAllOpenSlots()
+    {
+        $sql = "SELECT id, fromDate, toDate, date, status FROM slots WHERE status = 'open' ORDER BY id DESC";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            if ($stmt->execute()) {
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+        }
+        return false;
+    }
+
+    public function addAppointments($description, $user_id, $slot_id)
+    {
+        $sql = "INSERT INTO appointments (description, user_id, slot_id) VALUES 
+        (?,?,?)";
+        $stmt = $this->pdo->prepare($sql);
+        if ($stmt) {
+            return $stmt->execute([$description, $user_id, $slot_id]);
+        } else {
+            return false;
+        }
     }
 }
 ?>
